@@ -1,1 +1,0 @@
-"""Defense pipeline components."""

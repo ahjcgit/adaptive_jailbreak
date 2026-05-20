@@ -3,15 +3,15 @@ requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "adaptive-injection"
+name = "adaptive-jailbreak"
 version = "0.1.0"
-description = "Adaptive jailbreak red-teaming experiment harness"
+description = "Two-model adaptive jailbreak experiment harness"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = []
 
 [project.scripts]
-adaptive-injection = "adaptive_injection.cli:main"
+adaptive-jailbreak = "adaptive_jailbreak.cli:main"
 
 [tool.setuptools]
 package-dir = {"" = "src"}

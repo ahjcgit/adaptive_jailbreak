@@ -1,3 +1,44 @@
+# Two-model adaptive jailbreak experiment harness
+
+This project runs an iterative experiment loop with **two pluggable models**:
+- **Generator model**: proposes attack/jailbreak prompts.
+- **Target model**: receives the prompt and responds.
+
+Each step is evaluated (success, refusal degree, latency, structure, etc.) and fed back into an **adaptive policy** to improve the next prompt.
+
+## Safety modes
+- **ModeA (restricted)**: default; safe refusal-testing rubric and constrained prompt families.
+- **ModeB (unrestricted)**: gated behind `--enable-unrestricted`; writes artifacts to a separate directory.
+
+## Quickstart (no external models)
+
+```bash
+PYTHONPATH=src python -m adaptive_jailbreak --gen mock --target mock --policy bandit --budget 12 --run-id smoke_mock
+```
+
+Artifacts are written under `artifacts/modeA/` by default.
+
+## Using Ollama
+
+Run Ollama locally, then:
+
+```bash
+PYTHONPATH=src python -m adaptive_jailbreak \
+  --gen ollama --gen-model llama3.1 \
+  --target ollama --target-model llama3.1 \
+  --policy bandit --budget 10 --run-id local_ollama
+```
+
+## OpenAI-compatible target
+
+```bash
+set OPENAI_COMPAT_BASE_URL=https://your-endpoint.example/v1
+set OPENAI_COMPAT_API_KEY=your-key
+set OPENAI_COMPAT_MODEL=your-model
+
+PYTHONPATH=src python -m adaptive_jailbreak --gen ollama --gen-model llama3.1 --target openai-compatible --policy bandit --budget 10
+```
+
 # Adaptive Injection
 
 This repository contains a minimal experiment harness for an adaptive red-teaming pipeline. It is intentionally split into:
@@ -25,7 +66,7 @@ This repository contains a minimal experiment harness for an adaptive red-teamin
 
 ## Project layout
 ```text
-src/adaptive_injection/
+src/adaptive_jailbreak/
   analysis/
   datasets/
   defenses/
@@ -60,7 +101,7 @@ pip install -e . --no-build-isolation
 Run the full pipeline with the mock target.
 
 ```bash
-PYTHONPATH=src python -m adaptive_injection --target mock --policy bandit --budget 12
+PYTHONPATH=src python -m adaptive_jailbreak --target mock --policy bandit --budget 12
 ```
 
 This writes outputs to:
@@ -72,7 +113,7 @@ This writes outputs to:
 Baseline on the mock target:
 
 ```bash
-PYTHONPATH=src python -m adaptive_injection \
+PYTHONPATH=src python -m adaptive_jailbreak \
   --target mock \
   --policy random \
   --budget 20 \
@@ -82,7 +123,7 @@ PYTHONPATH=src python -m adaptive_injection \
 Adaptive search on the mock target:
 
 ```bash
-PYTHONPATH=src python -m adaptive_injection \
+PYTHONPATH=src python -m adaptive_jailbreak \
   --target mock \
   --policy bandit \
   --budget 20 \
@@ -92,7 +133,7 @@ PYTHONPATH=src python -m adaptive_injection \
 Defense ablation on the mock target:
 
 ```bash
-PYTHONPATH=src python -m adaptive_injection \
+PYTHONPATH=src python -m adaptive_jailbreak \
   --target mock \
   --policy bandit \
   --budget 20 \
@@ -103,7 +144,7 @@ PYTHONPATH=src python -m adaptive_injection \
 ```
 
 ## Running against a real target
-The repository includes `src/adaptive_injection/targets/openai_compatible.py` as a scaffold.
+The repository includes `src/adaptive_jailbreak/targets/openai_compatible.py` as a scaffold.
 
 Set environment variables:
 
@@ -116,7 +157,7 @@ export OPENAI_COMPAT_MODEL="your-model-name"
 Then run:
 
 ```bash
-PYTHONPATH=src python -m adaptive_injection \
+PYTHONPATH=src python -m adaptive_jailbreak \
   --target openai-compatible \
   --policy bandit \
   --budget 25 \
@@ -139,18 +180,18 @@ You should add:
 - enough diversity to test transfer and adaptation.
 
 ### 2. Strong judge logic
-Current file: `src/adaptive_injection/judges/rubric.py`
+Current file: `src/adaptive_jailbreak/judges/rubric.py`
 
 You need to replace the heuristic judge with either:
 - a separate judge model call that emits structured JSON, or
 - a more reliable local rubric implementation.
 
-The current output contract is `JudgeResult` in `src/adaptive_injection/models.py`.
+The current output contract is `JudgeResult` in `src/adaptive_jailbreak/models.py`.
 
 ### 3. Real target adapters
 Current files:
-- `src/adaptive_injection/targets/openai_compatible.py`
-- `src/adaptive_injection/targets/mock_target.py`
+- `src/adaptive_jailbreak/targets/openai_compatible.py`
+- `src/adaptive_jailbreak/targets/mock_target.py`
 
 You likely need to add one or both:
 - `VllmTargetAdapter`
@@ -163,8 +204,8 @@ TargetAdapter.generate(prompt: str, system_prompt: str | None) -> TargetResponse
 
 ### 4. Stronger adaptive policy
 Current files:
-- `src/adaptive_injection/policies/random_policy.py`
-- `src/adaptive_injection/policies/bandit_policy.py`
+- `src/adaptive_jailbreak/policies/random_policy.py`
+- `src/adaptive_jailbreak/policies/bandit_policy.py`
 
 You may want to add:
 - evolutionary search,

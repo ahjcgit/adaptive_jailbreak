@@ -1,0 +1,18 @@
+{
+  "run_id": "smoke_mock",
+  "mode": "restricted",
+  "budget": 5,
+  "policy": "bandit",
+  "successes": 5,
+  "success_rate": 1.0,
+  "avg_refusal_score": 0.08,
+  "avg_structure_score": 0.86,
+  "avg_generator_latency_s": 0.001,
+  "avg_target_latency_s": 0.001,
+  "artifacts": {
+    "jsonl": "artifacts/modeA/logs/smoke_mock.jsonl",
+    "csv": "artifacts/modeA/logs/smoke_mock.csv",
+    "summary": "artifacts/modeA/metrics/smoke_mock_summary.json"
+  },
+  "summary_line": "run_id=smoke_mock mode=restricted budget=5 success_rate=100.00% avg_refusal=0.080 avg_target_latency_s=0.001"
+}
