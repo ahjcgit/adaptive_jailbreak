@@ -1,0 +1,52 @@
+from adaptive_jailbreak.analysis import ResultAnalyzer, format_trajectory_markdown, markdown_report
+from adaptive_jailbreak.schemas import TrajectoryRecord
+
+
+def test_analysis_summary():
+    record = TrajectoryRecord(
+        experiment_id="exp",
+        run_id="run",
+        task_id="task",
+        iteration=0,
+        attacker_model="a",
+        target_model="t",
+        evaluator_model_or_type="e",
+        attacker_prompt="p",
+        target_response="r",
+        evaluator_scores={},
+        success_label="success",
+        refusal_label="non_refusal",
+        attacker_reflection="",
+        strategy_tags=["reflection"],
+        timestamp="now",
+        config_hash="sha256:x",
+    )
+    analyzer = ResultAnalyzer([record])
+    assert analyzer.summarize()["success_rate"] == 1.0
+    assert "Experiment Report" in markdown_report(analyzer)
+
+
+def test_trajectory_markdown_formatter_includes_core_sections():
+    record = TrajectoryRecord(
+        experiment_id="exp",
+        run_id="run",
+        task_id="task",
+        iteration=0,
+        attacker_model="a",
+        target_model="t",
+        evaluator_model_or_type="e",
+        attacker_prompt="prompt",
+        target_response="response",
+        evaluator_scores={"compliance_score": 1.0, "refusal_score": 0.0, "semantic_similarity": 0.5},
+        success_label="success",
+        refusal_label="non_refusal",
+        attacker_reflection="reflection",
+        strategy_tags=["reflection"],
+        timestamp="now",
+        config_hash="sha256:x",
+        metadata={"prompt_length": 6, "response_length": 8},
+    )
+    rendered = format_trajectory_markdown([record])
+    assert "## Run `run`" in rendered
+    assert "**Attacker Prompt**" in rendered
+    assert "```text\nresponse\n```" in rendered

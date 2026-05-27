@@ -1,20 +1,28 @@
 [build-system]
-requires = ["setuptools"]
+requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "adaptive-jailbreak"
 version = "0.1.0"
-description = "Two-model adaptive jailbreak experiment harness"
+description = "Research framework for controlled iterative adversarial prompting experiments."
 readme = "README.md"
 requires-python = ">=3.10"
-dependencies = []
+dependencies = [
+  "PyYAML>=6.0",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0"]
+analysis = ["matplotlib>=3.8"]
+local = ["torch", "transformers"]
 
 [project.scripts]
 adaptive-jailbreak = "adaptive_jailbreak.cli:main"
 
-[tool.setuptools]
-package-dir = {"" = "src"}
-
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]

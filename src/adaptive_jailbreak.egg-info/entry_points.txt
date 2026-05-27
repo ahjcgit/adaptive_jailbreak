@@ -1,0 +1,2 @@
+[console_scripts]
+adaptive-jailbreak = adaptive_jailbreak.cli:main

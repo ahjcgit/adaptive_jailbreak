@@ -1,4 +1,3 @@
-__all__ = ["__version__"]
+'Adaptive jailbreak research framework.'
 
 __version__ = "0.1.0"
-

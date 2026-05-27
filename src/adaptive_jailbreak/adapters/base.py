@@ -1,23 +1,27 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
-from typing import Protocol
+from abc import ABC, abstractmethod
+from typing import Any
 
-from adaptive_jailbreak.models import ModelResponse
-
-
-@dataclass(frozen=True)
-class AdapterCallResult:
-    response: ModelResponse
-    latency_s: float
+from adaptive_jailbreak.schemas import GenerationConfig, ModelMessage, ModelResponse
 
 
-class ModelAdapter(Protocol):
-    """
-    Minimal contract for either generator or target backends.
+class ModelAdapter(ABC):
+    supports_system_prompt = True
+    supports_seed = False
 
-    The runner treats both as the same interface: "send prompt -> get response + latency".
-    """
+    def __init__(self, model_id: str, provider: str) -> None:
+        self.model_id = model_id
+        self.provider = provider
 
-    def generate(self, prompt: str, system_prompt: str | None = None) -> AdapterCallResult: ...
+    @abstractmethod
+    def generate(
+        self,
+        messages: list[ModelMessage],
+        generation_config: GenerationConfig,
+        metadata: dict[str, Any] | None = None,
+    ) -> ModelResponse:
+        raise NotImplementedError
 
+    def healthcheck(self) -> bool:
+        return True

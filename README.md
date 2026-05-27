@@ -1,243 +1,74 @@
-# Two-model adaptive jailbreak experiment harness
+# Adaptive Jailbreak Research Framework
 
-This project runs an iterative experiment loop with **two pluggable models**:
-- **Generator model**: proposes attack/jailbreak prompts.
-- **Target model**: receives the prompt and responds.
+This repository contains a research-oriented experiment framework for studying iterative adversarial prompting, refusal-boundary behavior, prompt evolution, transferability, and model robustness under controlled conditions.
 
-Each step is evaluated (success, refusal degree, latency, structure, etc.) and fed back into an **adaptive policy** to improve the next prompt.
+The framework treats model text as inert data. It never executes generated instructions, opens generated URLs, or delegates generated text to tools. The only intended side effects are explicitly configured model calls and local logging under configured output directories.
 
-## Safety modes
-- **ModeA (restricted)**: default; safe refusal-testing rubric and constrained prompt families.
-- **ModeB (unrestricted)**: gated behind `--enable-unrestricted`; writes artifacts to a separate directory.
-
-## Quickstart (no external models)
+## Quick Start
 
 ```bash
-PYTHONPATH=src python -m adaptive_jailbreak --gen mock --target mock --policy bandit --budget 12 --run-id smoke_mock
+python -m adaptive_jailbreak.cli run --config configs/local_dummy.yaml
+python -m adaptive_jailbreak.cli summarize outputs/pair_like_synthetic_v1/trajectory.jsonl
+python -m adaptive_jailbreak.cli replay outputs/pair_like_synthetic_v1/trajectory.jsonl
 ```
 
-Artifacts are written under `artifacts/modeA/` by default.
+The default configs use deterministic dummy adapters and synthetic tasks. They are suitable for tests, CLI validation, and development without network calls.
 
-## Using Ollama
+## Local Model Smoke Test
 
-Run Ollama locally, then:
+Install optional local-model dependencies, then run a two-model smoke test:
 
 ```bash
-PYTHONPATH=src python -m adaptive_jailbreak \
-  --gen ollama --gen-model llama3.1 \
-  --target ollama --target-model llama3.1 \
-  --policy bandit --budget 10 --run-id local_ollama
+pip install -e .[local]
+python scripts/run_local_smoke.py
 ```
 
-## OpenAI-compatible target
+By default the script uses `sshleifer/tiny-gpt2` as the attacker model and `hf-internal-testing/tiny-random-gpt2` as the target model. Override them with:
 
 ```bash
-set OPENAI_COMPAT_BASE_URL=https://your-endpoint.example/v1
-set OPENAI_COMPAT_API_KEY=your-key
-set OPENAI_COMPAT_MODEL=your-model
-
-PYTHONPATH=src python -m adaptive_jailbreak --gen ollama --gen-model llama3.1 --target openai-compatible --policy bandit --budget 10
+python scripts/run_local_smoke.py --attacker-model sshleifer/tiny-gpt2 --target-model distilgpt2 --max-iterations 2
 ```
 
-# Adaptive Injection
+Use `--local-files-only` if both model IDs are already cached or are local filesystem paths and you want to avoid Hugging Face downloads.
 
-This repository contains a minimal experiment harness for an adaptive red-teaming pipeline. It is intentionally split into:
-- runnable components that exercise the experiment loop end to end,
-- placeholder modules for the parts you must connect to your own target model or dataset,
-- explicit `TODO(user)` markers where project-specific implementation is still required.
+The script writes a generated config, JSONL trajectory, manifest, and Markdown report under `outputs/<experiment_id>/`.
 
-## What is implemented
-- Seed prompt loading from JSONL.
-- Prompt mutation operators.
-- Adaptive search policies: `random` and `bandit`.
-- Defense pipeline toggles.
-- Local heuristic judge.
-- Experiment runner with JSONL, CSV, and summary metrics output.
-- Runnable mock target for smoke tests.
-- Optional OpenAI-compatible target adapter scaffold.
-
-## What is intentionally a placeholder
-- Real jailbreak seed traces and richer prompt families.
-- A strong judge model with your actual rubric.
-- A real OSS local-model adapter if you want `vllm` or `transformers`.
-- A real hosted-model adapter if your API format differs from the included OpenAI-compatible scaffold.
-- Multi-turn state logic beyond the basic mutation-chain placeholder.
-- Publication-safe redaction and advanced plotting.
-
-## Project layout
-```text
-src/adaptive_jailbreak/
-  analysis/
-  datasets/
-  defenses/
-  generation/
-  judges/
-  policies/
-  runners/
-  targets/
-data/
-  benign/
-  seeds/
-artifacts/
-  logs/
-  metrics/
-```
-
-## Setup
-Create a virtual environment. If editable install works in your environment, you can use it, but the no-network-safe path is to run with `PYTHONPATH=src`.
+Format a trajectory JSONL file into a readable per-iteration Markdown view:
 
 ```bash
-python -m venv .venv
-source .venv/bin/activate
+python scripts/format_trajectory.py outputs/<experiment_id>/trajectory.jsonl
 ```
 
-Optional editable install:
+Or through the CLI:
 
 ```bash
-pip install -e . --no-build-isolation
+pip install -e .
+python -m adaptive_jailbreak.cli format outputs/<experiment_id>/trajectory.jsonl --output outputs/<experiment_id>/trajectory.md
 ```
 
-## Smoke test
-Run the full pipeline with the mock target.
+## Functional Benchmark Prompts
+
+For more meaningful local checks, use `tasks/functional_benchmark.yaml`. These prompts are benign synthetic probes for:
+
+- Safe summary compliance
+- Refusal-boundary redirection
+- Safe substitute checklist generation
+- Prompt drift across attacker iterations
+
+Run them with instruction-capable local models by overriding the default tiny placeholders:
 
 ```bash
-PYTHONPATH=src python -m adaptive_jailbreak --target mock --policy bandit --budget 12
+python scripts/run_local_smoke.py --config configs/local_functional_transformers.yaml --attacker-model Qwen/Qwen2.5-0.5B-Instruct --target-model Qwen/Qwen2.5-0.5B-Instruct --max-iterations 3 --max-new-tokens 128
 ```
 
-This writes outputs to:
-- `artifacts/logs/<run_id>.jsonl`
-- `artifacts/logs/<run_id>.csv`
-- `artifacts/metrics/<run_id>_summary.json`
+To run just one functional task, add `--task-id functional_safe_summary`. If you omit `--task-id`, the script uses the task list from the config; `configs/local_functional_transformers.yaml` runs all functional benchmark tasks.
 
-## Example experiment commands
-Baseline on the mock target:
+Tiny random models are useful only for checking plumbing. Meaningful scores require models that can follow instructions.
 
-```bash
-PYTHONPATH=src python -m adaptive_jailbreak \
-  --target mock \
-  --policy random \
-  --budget 20 \
-  --run-id baseline_random
-```
+## Safety Controls
 
-Adaptive search on the mock target:
-
-```bash
-PYTHONPATH=src python -m adaptive_jailbreak \
-  --target mock \
-  --policy bandit \
-  --budget 20 \
-  --run-id adaptive_bandit
-```
-
-Defense ablation on the mock target:
-
-```bash
-PYTHONPATH=src python -m adaptive_jailbreak \
-  --target mock \
-  --policy bandit \
-  --budget 20 \
-  --system-hardening \
-  --input-moderation \
-  --self-critique \
-  --run-id defended_bandit
-```
-
-## Running against a real target
-The repository includes `src/adaptive_jailbreak/targets/openai_compatible.py` as a scaffold.
-
-Set environment variables:
-
-```bash
-export OPENAI_COMPAT_BASE_URL="https://your-endpoint.example/v1"
-export OPENAI_COMPAT_API_KEY="your-key-if-needed"
-export OPENAI_COMPAT_MODEL="your-model-name"
-```
-
-Then run:
-
-```bash
-PYTHONPATH=src python -m adaptive_jailbreak \
-  --target openai-compatible \
-  --policy bandit \
-  --budget 25 \
-  --run-id real_target_bandit
-```
-
-## What you still need to implement
-
-### 1. Real seed traces
-Replace `data/seeds/sample_seeds.jsonl` with your actual seed set.
-
-Expected schema per line:
-```json
-{"seed_id":"...","family":"...","prompt":"...","tags":["..."]}
-```
-
-You should add:
-- public jailbreak seeds grouped by family,
-- your own abstract prompt templates,
-- enough diversity to test transfer and adaptation.
-
-### 2. Strong judge logic
-Current file: `src/adaptive_jailbreak/judges/rubric.py`
-
-You need to replace the heuristic judge with either:
-- a separate judge model call that emits structured JSON, or
-- a more reliable local rubric implementation.
-
-The current output contract is `JudgeResult` in `src/adaptive_jailbreak/models.py`.
-
-### 3. Real target adapters
-Current files:
-- `src/adaptive_jailbreak/targets/openai_compatible.py`
-- `src/adaptive_jailbreak/targets/mock_target.py`
-
-You likely need to add one or both:
-- `VllmTargetAdapter`
-- `TransformersTargetAdapter`
-
-Each adapter must implement:
-```python
-TargetAdapter.generate(prompt: str, system_prompt: str | None) -> TargetResponse
-```
-
-### 4. Stronger adaptive policy
-Current files:
-- `src/adaptive_jailbreak/policies/random_policy.py`
-- `src/adaptive_jailbreak/policies/bandit_policy.py`
-
-You may want to add:
-- evolutionary search,
-- beam search,
-- multi-turn follow-up planning conditioned on prior responses.
-
-### 5. Better multi-turn traces
-The current runner mutates prompts across steps but does not store a full conversational transcript.
-
-You should extend:
-- `PromptCandidate`
-- `TrialRecord`
-- `ExperimentRunner`
-
-so each state can include prior assistant outputs and explicit follow-up turns.
-
-## Where to plug in missing pieces
-Search the codebase for:
-- `TODO(user)`
-
-Those markers identify the places where this scaffold stops and your project-specific implementation begins.
-
-## Suggested real experiment sequence
-1. Run the smoke test locally with `--target mock`.
-2. Replace the seed dataset with your real seed set.
-3. Plug in your real target adapter.
-4. Replace the heuristic judge.
-5. Run static vs adaptive experiments.
-6. Run defense ablations.
-7. Export summaries from `artifacts/metrics/` for plots.
-
-## Notes
-- This implementation is designed to be safe to run locally without requiring access to an external model.
-- The mock target is only for pipeline validation, not for scientific results.
-- Keep raw prompt/output traces local if they contain sensitive or high-risk content.
+- Use synthetic benchmark tasks by default.
+- Use task allowlists before running experiments.
+- Set `experiment.local_only: true` to reject API adapters.
+- Never execute target outputs or attacker prompts.
+- Keep prompts, responses, evaluator scores, and config hashes in local logs for auditability.
