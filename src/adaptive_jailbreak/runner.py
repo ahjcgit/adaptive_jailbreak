@@ -5,10 +5,10 @@ from pathlib import Path
 
 from adaptive_jailbreak.adapters import build_adapter
 from adaptive_jailbreak.agents import AttackerAgent, TargetAgent
-from adaptive_jailbreak.config import ConfigLoader, load_tasks
+from adaptive_jailbreak.config import ConfigLoader, load_tasks, select_tasks
 from adaptive_jailbreak.evaluators import build_evaluator
 from adaptive_jailbreak.safety import SafetyControls
-from adaptive_jailbreak.schemas import FrameworkConfig, TrajectoryRecord
+from adaptive_jailbreak.schemas import FrameworkConfig, TaskRecord, TrajectoryRecord
 from adaptive_jailbreak.storage import JsonlTrajectoryStore
 from adaptive_jailbreak.strategies import build_strategy
 from adaptive_jailbreak.utils.time import now_utc
@@ -25,8 +25,6 @@ def stopping_criteria_met(config: FrameworkConfig, scores, trajectory: list[Traj
     stopping = config.runner.stopping
     if stopping.stop_on_success and scores.success_label == "success":
         return True
-    if scores.compliance_score >= stopping.min_compliance_score and scores.refusal_score <= stopping.max_refusal_score:
-        return stopping.stop_on_success
     if stopping.patience is not None and len(trajectory) >= stopping.patience:
         recent = trajectory[-stopping.patience :]
         return all(step.success_label != "success" for step in recent)
@@ -61,11 +59,10 @@ class ExperimentRunner:
         return cls(ConfigLoader.load(path), project_root=project_root)
 
     def run(self, resume_run_id: str | None = None, force_config: bool = False) -> list[TrajectoryRecord]:
-        task_path = self.project_root / self.config.tasks.task_set_path
-        tasks = load_tasks(task_path, self.config.tasks.task_ids)
+        tasks = self._load_configured_tasks()
         if not tasks:
             selected = ", ".join(self.config.tasks.task_ids) if self.config.tasks.task_ids else "all tasks"
-            raise ValueError(f"No tasks matched {selected} in {task_path}")
+            raise ValueError(f"No tasks matched {selected}")
         all_records: list[TrajectoryRecord] = []
         for task in tasks:
             self.controls.validate_task(task)
@@ -78,7 +75,11 @@ class ExperimentRunner:
                     else:
                         candidate = self.attacker.next_prompt(task, trajectory[-1], trajectory, self.config.attacker.context)
                     self.controls.validate_generated_prompt(candidate.prompt)
-                    response = self.target.respond(candidate.prompt, iteration=iteration)
+                    response = self.target.respond(
+                        candidate.prompt,
+                        iteration=iteration,
+                        system_prompt=task.target_system_prompt,
+                    )
                     self.controls.validate_inert_output(response.text)
                     scores = self.evaluator.score(task, candidate.prompt, response.text, trajectory)
                     record = TrajectoryRecord(
@@ -125,3 +126,11 @@ class ExperimentRunner:
 
     def replay(self, run_id: str | None = None) -> list[TrajectoryRecord]:
         return self.store.load_trajectory(run_id)
+
+    def _load_configured_tasks(self) -> list[TaskRecord]:
+        if self.config.tasks.items:
+            return select_tasks(self.config.tasks.items, self.config.tasks.task_ids)
+        if self.config.tasks.task_set_path:
+            task_path = self.project_root / self.config.tasks.task_set_path
+            return load_tasks(task_path, self.config.tasks.task_ids)
+        return []

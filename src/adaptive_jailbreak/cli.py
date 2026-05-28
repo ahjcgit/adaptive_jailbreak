@@ -9,7 +9,6 @@ from adaptive_jailbreak.analysis import (
     ResultAnalyzer,
     format_trajectory_markdown,
     format_trajectory_pretty_json,
-    markdown_report,
 )
 from adaptive_jailbreak.config import ConfigLoader
 from adaptive_jailbreak.evaluators import build_evaluator
@@ -31,6 +30,7 @@ def cmd_run(args: argparse.Namespace) -> None:
     runner = ExperimentRunner(config)
     records = runner.run()
     print(f"Wrote {len(records)} records to {runner.store.trajectory_path}")
+    print(f"Wrote readable trajectory to {runner.store.trajectory_markdown_path}")
 
 
 def cmd_resume(args: argparse.Namespace) -> None:
@@ -69,7 +69,7 @@ def cmd_export(args: argparse.Namespace) -> None:
     records = _load_records(args.trajectory)
     output = Path(args.output)
     if args.format == "markdown":
-        output.write_text(markdown_report(ResultAnalyzer(records)), encoding="utf-8")
+        output.write_text(format_trajectory_markdown(records), encoding="utf-8")
     elif args.format == "json":
         output.write_text(json.dumps([record.to_dict() for record in records], indent=2), encoding="utf-8")
     elif args.format == "csv":

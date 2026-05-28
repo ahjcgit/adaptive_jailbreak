@@ -5,6 +5,7 @@ import os
 from pathlib import Path
 from typing import Any
 
+from adaptive_jailbreak.analysis.formatting import format_trajectory_markdown
 from adaptive_jailbreak.schemas import TrajectoryRecord
 from adaptive_jailbreak.utils.time import now_utc
 
@@ -25,6 +26,7 @@ class JsonlTrajectoryStore:
         self.flush_each_record = flush_each_record
         self.output_dir.mkdir(parents=True, exist_ok=True)
         self.trajectory_path = self.output_dir / "trajectory.jsonl"
+        self.trajectory_markdown_path = self.output_dir / "trajectory.md"
         self.manifest_path = self.output_dir / "manifest.json"
         self._ensure_manifest()
 
@@ -91,6 +93,7 @@ class JsonlTrajectoryStore:
         run["updated_at"] = now_utc()
         manifest["summary"]["records"] = int(manifest["summary"].get("records", 0)) + 1
         self._write_manifest(manifest)
+        self.write_markdown_output()
 
     def load_trajectory(self, run_id: str | None = None) -> list[TrajectoryRecord]:
         if not self.trajectory_path.exists():
@@ -103,6 +106,10 @@ class JsonlTrajectoryStore:
             if run_id is None or record.run_id == run_id:
                 records.append(record)
         return sorted(records, key=lambda record: (record.run_id, record.iteration))
+
+    def write_markdown_output(self) -> None:
+        records = self.load_trajectory()
+        self.trajectory_markdown_path.write_text(format_trajectory_markdown(records), encoding="utf-8")
 
     def mark_run_complete(self, run_id: str, reason: str) -> None:
         manifest = self._read_manifest()

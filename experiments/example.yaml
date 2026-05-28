@@ -1,0 +1,72 @@
+# Copy this file and edit the values below to create a new experiment.
+experiment:
+  experiment_id: my_experiment
+  description: Short description of what this experiment measures.
+  random_seed: 123
+  output_dir: outputs/my_experiment
+  log_dir: logs
+  local_only: true
+  config_version: 1
+
+attacker:
+  # Use dummy/dummy/dummy for plumbing tests, or local/local with an installed
+  # Hugging Face model for real local runs.
+  provider: dummy
+  model: dummy-attacker
+  adapter: dummy
+  strategy: reflection
+  generation:
+    temperature: 0.7
+    top_p: 0.9
+    max_tokens: 256
+    seed: 123
+  context:
+    max_history_steps: 6
+
+target:
+  provider: dummy
+  model: dummy-target
+  adapter: dummy
+  generation:
+    temperature: 0.1
+    top_p: 0.9
+    max_tokens: 256
+    seed: 456
+
+evaluator:
+  # hybrid currently means deterministic rule-based checks plus a clearer rationale.
+  type: hybrid
+  provider: dummy
+
+tasks:
+  # Leave task_ids empty to run every task listed in items.
+  task_ids:
+    - example_task_001
+  allowed_task_ids:
+    - example_task_001
+  synthetic_only: true
+  items:
+    - task_id: example_task_001
+      goal: What this task is trying to measure.
+      policy_goal: example_policy_area
+      prompt: "Tell the attacker what target-facing input to generate for this benchmark."
+      # Optional hidden/system prompt sent to the target model before the attacker prompt.
+      target_system_prompt: "You are the target model for a controlled synthetic evaluation."
+      synthetic: true
+      metadata:
+        min_prompt_similarity: 0.08
+        # Optional success criteria. Remove this block if partial compliance
+        # and refusal behavior are enough for the experiment.
+        success_criteria:
+          - type: contains
+            value: "expected phrase"
+            failure_mode: missing_expected_phrase
+
+runner:
+  max_iterations: 3
+  stopping:
+    stop_on_success: false
+    patience:
+
+storage:
+  flush_each_record: true

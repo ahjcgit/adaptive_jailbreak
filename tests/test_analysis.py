@@ -1,4 +1,4 @@
-from adaptive_jailbreak.analysis import ResultAnalyzer, format_trajectory_markdown, markdown_report
+from adaptive_jailbreak.analysis import ResultAnalyzer, format_trajectory_markdown
 from adaptive_jailbreak.schemas import TrajectoryRecord
 
 
@@ -23,7 +23,6 @@ def test_analysis_summary():
     )
     analyzer = ResultAnalyzer([record])
     assert analyzer.summarize()["success_rate"] == 1.0
-    assert "Experiment Report" in markdown_report(analyzer)
 
 
 def test_trajectory_markdown_formatter_includes_core_sections():

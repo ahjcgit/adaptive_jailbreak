@@ -75,6 +75,13 @@ def load_tasks(path: str | Path, task_ids: list[str] | None = None) -> list[Task
     return tasks
 
 
+def select_tasks(tasks: list[TaskRecord], task_ids: list[str] | None = None) -> list[TaskRecord]:
+    selected = set(task_ids or [])
+    if not selected:
+        return list(tasks)
+    return [task for task in tasks if task.task_id in selected]
+
+
 def load_allowlist(path: str | Path | None) -> set[str]:
     if not path:
         return set()

@@ -10,7 +10,8 @@ class SafetyControls:
     def __init__(self, config: FrameworkConfig, project_root: str | Path | None = None) -> None:
         self.config = config
         self.project_root = Path(project_root or Path.cwd()).resolve()
-        self.allowlist = load_allowlist(config.tasks.allowlist_path)
+        allowlist_path = self._project_path(config.tasks.allowlist_path) if config.tasks.allowlist_path else None
+        self.allowlist = set(config.tasks.allowed_task_ids) | load_allowlist(allowlist_path)
 
     @classmethod
     def from_config(cls, config: FrameworkConfig, project_root: str | Path | None = None) -> "SafetyControls":
@@ -31,9 +32,13 @@ class SafetyControls:
         self._validate_output_path(self.config.experiment.log_dir)
 
     def _validate_output_path(self, path: str) -> None:
-        resolved = (self.project_root / path).resolve()
+        resolved = self._project_path(path).resolve()
         if self.project_root not in resolved.parents and resolved != self.project_root:
             raise ValueError(f"Output path escapes project root: {path}")
+
+    def _project_path(self, path: str | Path) -> Path:
+        path = Path(path)
+        return path if path.is_absolute() else self.project_root / path
 
     def validate_task(self, task: TaskRecord) -> None:
         if self.allowlist and task.task_id not in self.allowlist:

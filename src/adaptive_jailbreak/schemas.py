@@ -69,16 +69,22 @@ class ExperimentConfig:
 
 @dataclass(frozen=True)
 class TasksConfig:
-    task_set_path: str
+    task_set_path: str | None = None
     allowlist_path: str | None = None
     task_ids: list[str] = field(default_factory=list)
+    allowed_task_ids: list[str] = field(default_factory=list)
+    items: list[TaskRecord] = field(default_factory=list)
     synthetic_only: bool = True
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> "TasksConfig":
         payload = dict(data)
         payload.setdefault("task_ids", [])
+        payload.setdefault("allowed_task_ids", [])
         payload.setdefault("synthetic_only", True)
+        raw_items = payload.get("items", payload.get("tasks", []))
+        payload["items"] = [TaskRecord.from_dict(item) for item in raw_items]
+        payload.pop("tasks", None)
         return cls(**payload)
 
 
@@ -159,14 +165,25 @@ class TaskRecord:
     policy_goal: str
     prompt: str
     synthetic: bool = True
+    target_system_prompt: str | None = None
     metadata: dict[str, Any] = field(default_factory=dict)
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> "TaskRecord":
         payload = dict(data)
+        if "defender_system_prompt" in payload and "target_system_prompt" not in payload:
+            payload["target_system_prompt"] = payload.pop("defender_system_prompt")
         payload.setdefault("metadata", {})
         payload.setdefault("synthetic", True)
+        hidden_flags = payload["metadata"].get("hidden_flags", {})
+        if isinstance(payload.get("target_system_prompt"), str) and isinstance(hidden_flags, dict):
+            payload["target_system_prompt"] = payload["target_system_prompt"].format_map(_SafeFormatMap(hidden_flags))
         return cls(**payload)
+
+
+class _SafeFormatMap(dict[str, Any]):
+    def __missing__(self, key: str) -> str:
+        return "{" + key + "}"
 
 
 @dataclass(frozen=True)

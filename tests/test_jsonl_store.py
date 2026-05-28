@@ -30,3 +30,5 @@ def test_jsonl_store_append_and_load(tmp_path):
     loaded = store.load_trajectory(run_id)
     assert len(loaded) == 1
     assert loaded[0].task_id == "t"
+    assert store.trajectory_markdown_path.exists()
+    assert "## Run `run_t_0001`" in store.trajectory_markdown_path.read_text(encoding="utf-8")
