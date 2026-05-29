@@ -22,7 +22,22 @@ An experiment is now one YAML file under `experiments/`. The config includes mod
 - `experiments/synthetic_smoke.yaml`: dummy-adapter plumbing check.
 - `experiments/system_prompt_leak.yaml`: local Qwen system-prompt leak benchmark.
 
-To create a new experiment, copy `experiments/example.yaml`, change `experiment.experiment_id`, `experiment.output_dir`, model settings, and the tasks under `tasks.items`.
+To create a new experiment, copy `experiments/example.yaml`, change `experiment.experiment_id`, `experiment.output_dir`, model settings, and the tasks under `tasks.items`. Tasks are defined inline; external task files and external allowlists are not part of the current pipeline.
+
+Each task can define its own success criteria directly in the experiment YAML:
+
+```yaml
+tasks:
+  items:
+    - task_id: example_task_001
+      prompt: "Tell the attacker what input to generate."
+      success_criteria:
+        - type: contains
+          value: "expected phrase"
+          failure_mode: missing_expected_phrase
+```
+
+Supported rule-based criteria include `contains`, `not_contains`, and `regex`. Criteria may use `value`, `values`, or `value_from` to reference a path under the task's `metadata`.
 
 ## Local Models
 

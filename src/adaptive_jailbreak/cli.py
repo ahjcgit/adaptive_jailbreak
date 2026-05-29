@@ -11,7 +11,6 @@ from adaptive_jailbreak.analysis import (
     format_trajectory_pretty_json,
 )
 from adaptive_jailbreak.config import ConfigLoader
-from adaptive_jailbreak.evaluators import build_evaluator
 from adaptive_jailbreak.runner import ExperimentRunner
 from adaptive_jailbreak.safety import SafetyControls
 from adaptive_jailbreak.schemas import TrajectoryRecord
@@ -39,23 +38,6 @@ def cmd_resume(args: argparse.Namespace) -> None:
     print(f"Resumed {args.run_id}; wrote {len(records)} new records.")
 
 
-def cmd_evaluate(args: argparse.Namespace) -> None:
-    config = ConfigLoader.load(args.config)
-    evaluator = build_evaluator(config.evaluator)
-    records = _load_records(args.trajectory)
-    updated = []
-    for record in records:
-        task_stub = type("TaskStub", (), {"task_id": record.task_id, "prompt": record.attacker_prompt})()
-        scores = evaluator.score(task_stub, record.attacker_prompt, record.target_response, [])
-        payload = record.to_dict()
-        payload["evaluator_scores"] = scores.to_dict()
-        payload["success_label"] = scores.success_label
-        payload["refusal_label"] = scores.refusal_label
-        updated.append(payload)
-    Path(args.output).write_text("\n".join(json.dumps(item, sort_keys=True) for item in updated) + "\n", encoding="utf-8")
-    print(f"Wrote reevaluated records to {args.output}")
-
-
 def cmd_summarize(args: argparse.Namespace) -> None:
     print(json.dumps(ResultAnalyzer.from_jsonl(args.trajectory).summarize(), indent=2, sort_keys=True))
 
@@ -71,7 +53,7 @@ def cmd_export(args: argparse.Namespace) -> None:
     if args.format == "markdown":
         output.write_text(format_trajectory_markdown(records), encoding="utf-8")
     elif args.format == "json":
-        output.write_text(json.dumps([record.to_dict() for record in records], indent=2), encoding="utf-8")
+        output.write_text(format_trajectory_pretty_json(records), encoding="utf-8")
     elif args.format == "csv":
         with output.open("w", encoding="utf-8", newline="") as handle:
             writer = csv.DictWriter(handle, fieldnames=["run_id", "task_id", "iteration", "success_label", "refusal_label"])
@@ -87,18 +69,6 @@ def cmd_export(args: argparse.Namespace) -> None:
     else:
         raise ValueError(f"Unsupported export format: {args.format}")
     print(f"Exported {len(records)} records to {output}")
-
-
-def cmd_format(args: argparse.Namespace) -> None:
-    records = _load_records(args.trajectory)
-    output = Path(args.output)
-    if args.format == "markdown":
-        output.write_text(format_trajectory_markdown(records), encoding="utf-8")
-    elif args.format == "json":
-        output.write_text(format_trajectory_pretty_json(records), encoding="utf-8")
-    else:
-        raise ValueError(f"Unsupported format: {args.format}")
-    print(f"Wrote {len(records)} formatted records to {output}")
 
 
 def cmd_replay(args: argparse.Namespace) -> None:
@@ -124,11 +94,6 @@ def build_parser() -> argparse.ArgumentParser:
     resume.add_argument("--run-id", required=True)
     resume.add_argument("--force-config", action="store_true")
     resume.set_defaults(func=cmd_resume)
-    evaluate = sub.add_parser("evaluate")
-    evaluate.add_argument("--config", required=True)
-    evaluate.add_argument("trajectory")
-    evaluate.add_argument("--output", required=True)
-    evaluate.set_defaults(func=cmd_evaluate)
     summarize = sub.add_parser("summarize")
     summarize.add_argument("trajectory")
     summarize.set_defaults(func=cmd_summarize)
@@ -141,11 +106,6 @@ def build_parser() -> argparse.ArgumentParser:
     export.add_argument("--format", choices=["markdown", "json", "csv"], default="markdown")
     export.add_argument("--output", required=True)
     export.set_defaults(func=cmd_export)
-    fmt = sub.add_parser("format")
-    fmt.add_argument("trajectory")
-    fmt.add_argument("--format", choices=["markdown", "json"], default="markdown")
-    fmt.add_argument("--output", required=True)
-    fmt.set_defaults(func=cmd_format)
     replay = sub.add_parser("replay")
     replay.add_argument("trajectory")
     replay.add_argument("--run-id")

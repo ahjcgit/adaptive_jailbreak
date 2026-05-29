@@ -5,7 +5,7 @@ from pathlib import Path
 
 from adaptive_jailbreak.adapters import build_adapter
 from adaptive_jailbreak.agents import AttackerAgent, TargetAgent
-from adaptive_jailbreak.config import ConfigLoader, load_tasks, select_tasks
+from adaptive_jailbreak.config import ConfigLoader, select_tasks
 from adaptive_jailbreak.evaluators import build_evaluator
 from adaptive_jailbreak.safety import SafetyControls
 from adaptive_jailbreak.schemas import FrameworkConfig, TaskRecord, TrajectoryRecord
@@ -52,7 +52,7 @@ class ExperimentRunner:
             generation_config=config.attacker.generation,
         )
         self.target = TargetAgent(adapter=target_adapter, generation_config=config.target.generation)
-        self.evaluator = build_evaluator(config.evaluator)
+        self.evaluator = build_evaluator(config.evaluator, auth=config.auth)
 
     @classmethod
     def from_config_path(cls, path: str | Path, project_root: str | Path | None = None) -> "ExperimentRunner":
@@ -73,7 +73,7 @@ class ExperimentRunner:
                     if iteration == 0 and not trajectory:
                         candidate = self.attacker.initial_prompt(task, self.config.attacker.context)
                     else:
-                        candidate = self.attacker.next_prompt(task, trajectory[-1], trajectory, self.config.attacker.context)
+                        candidate = self.attacker.next_prompt(task, trajectory, self.config.attacker.context)
                     self.controls.validate_generated_prompt(candidate.prompt)
                     response = self.target.respond(
                         candidate.prompt,
@@ -109,6 +109,9 @@ class ExperimentRunner:
                             "raw_target_response": raw_target_response,
                             "target_response_sanitized": response.metadata.get("target_response_sanitized", False),
                             "graded_response": "raw_target_response",
+                            "attack_family": candidate.metadata.get("attack_family"),
+                            "attack_state": candidate.metadata.get("attack_state", {}),
+                            "structured_reflection": candidate.metadata.get("structured_reflection", {}),
                             "iteration_efficiency": None,
                             "novelty_from_previous": compute_novelty(candidate.prompt, trajectory),
                             "failure_mode": scores.failure_mode,
@@ -137,7 +140,4 @@ class ExperimentRunner:
     def _load_configured_tasks(self) -> list[TaskRecord]:
         if self.config.tasks.items:
             return select_tasks(self.config.tasks.items, self.config.tasks.task_ids)
-        if self.config.tasks.task_set_path:
-            task_path = self.project_root / self.config.tasks.task_set_path
-            return load_tasks(task_path, self.config.tasks.task_ids)
         return []

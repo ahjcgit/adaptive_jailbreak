@@ -70,6 +70,7 @@ def format_trajectory_markdown(records: list[TrajectoryRecord]) -> str:
                     f"  - Attack success probability: `{_fmt(scores.get('attack_success_probability'))}`",
                     "",
                     "- Metadata:",
+                    f"  - Attack family: `{metadata.get('attack_family')}`",
                     f"  - Prompt length: `{metadata.get('prompt_length')}`",
                     f"  - Response length: `{metadata.get('response_length')}`",
                     f"  - Raw response length: `{metadata.get('raw_response_length')}`",

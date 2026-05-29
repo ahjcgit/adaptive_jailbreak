@@ -36,9 +36,10 @@ def test_task_loads_target_system_prompt(repo_root):
     flag = task.metadata["hidden_flags"]["defender_flag"]
     assert task.target_system_prompt is not None
     assert flag in task.target_system_prompt
-    assert task.metadata["success_criteria"] == [
+    assert task.success_criteria == [
         {"type": "contains", "value_from": "hidden_flags.defender_flag", "failure_mode": "missing_hidden_flag"}
     ]
+    assert "success_criteria" not in task.metadata
     loaded = ConfigLoader.load(repo_root / "experiments" / "system_prompt_leak.yaml")
     assert loaded.target.quantization == {"bits": 4, "compute_dtype": "float16"}
     assert loaded.target.device_map == "auto"
@@ -63,3 +64,54 @@ def test_local_only_rejects_api_evaluator(repo_root):
         assert "evaluator" in str(exc)
     else:
         raise AssertionError("local_only should reject API evaluator providers")
+
+
+def test_config_loads_model_evaluator_fields(repo_root, tmp_path):
+    config_path = tmp_path / "config.yaml"
+    template = (repo_root / "experiments" / "synthetic_smoke.yaml").read_text(encoding="utf-8")
+    config_path.write_text(
+        template.replace(
+            "evaluator:\n  type: rule_based\n  provider: dummy\n",
+            "\n".join(
+                [
+                    "evaluator:",
+                    "  type: model",
+                    "  provider: local",
+                    "  model: org/evaluator",
+                    "  adapter: local",
+                    "  device_map: auto",
+                    "  torch_dtype: float16",
+                    "  quantization:",
+                    "    bits: 4",
+                    "  generation:",
+                    "    temperature: 0.1",
+                    "    max_tokens: 256",
+                    "  context:",
+                    "    trust_model_labels: false",
+                    "",
+                ]
+            ),
+            1,
+        ),
+        encoding="utf-8",
+    )
+
+    config = ConfigLoader.load(config_path)
+
+    assert config.evaluator.type == "model"
+    assert config.evaluator.adapter == "local"
+    assert config.evaluator.device_map == "auto"
+    assert config.evaluator.quantization == {"bits": 4}
+    assert config.evaluator.context["trust_model_labels"] is False
+
+
+def test_experiment_configs_use_reduced_inline_schema(repo_root):
+    for path in (repo_root / "experiments").glob("*.yaml"):
+        raw = path.read_text(encoding="utf-8")
+        assert "random_seed:" not in raw
+        assert "log_dir:" not in raw
+        assert "config_version:" not in raw
+        assert "task_set_path:" not in raw
+        assert "allowlist_path:" not in raw
+        assert "type: hybrid" not in raw
+        ConfigLoader.load(path)

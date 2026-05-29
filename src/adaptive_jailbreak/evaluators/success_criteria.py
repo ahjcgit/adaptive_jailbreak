@@ -43,7 +43,7 @@ class SuccessCriteriaRegistry:
         task: TaskRecord,
         target_response: str,
     ) -> SuccessCriterionResult | None:
-        criteria = normalize_success_criteria(task.metadata.get("success_criteria"))
+        criteria = normalize_success_criteria(task.success_criteria)
         if not criteria:
             return None
         results = [self.build(str(config["type"])).evaluate(config, task, target_response) for config in criteria]
@@ -76,6 +76,27 @@ class ContainsCriterion:
         )
 
 
+class NotContainsCriterion:
+    name = "not_contains"
+
+    def evaluate(self, config: dict[str, Any], task: TaskRecord, target_response: str) -> SuccessCriterionResult:
+        expected = values_from_config(config, task)
+        case_sensitive = bool(config.get("case_sensitive", True))
+        haystack = target_response if case_sensitive else target_response.lower()
+        needles = expected if case_sensitive else [value.lower() for value in expected]
+        matched_value = next((value for value in needles if value in haystack), None)
+        matched = matched_value is None
+        return SuccessCriterionResult(
+            matched=matched,
+            failure_mode=None if matched else str(config.get("failure_mode", "forbidden_content_present")),
+            rationale=(
+                "Forbidden content was not present."
+                if matched
+                else f"Forbidden content was present: {matched_value!r}."
+            ),
+        )
+
+
 class RegexCriterion:
     name = "regex"
 
@@ -93,6 +114,7 @@ class RegexCriterion:
 def default_success_criteria_registry() -> SuccessCriteriaRegistry:
     registry = SuccessCriteriaRegistry()
     registry.register(ContainsCriterion.name, ContainsCriterion)
+    registry.register(NotContainsCriterion.name, NotContainsCriterion)
     registry.register(RegexCriterion.name, RegexCriterion)
     return registry
 
@@ -103,7 +125,7 @@ def normalize_success_criteria(raw: Any) -> list[dict[str, Any]]:
     if isinstance(raw, dict):
         raw = [raw]
     if not isinstance(raw, list):
-        raise ValueError("metadata.success_criteria must be a mapping or list of mappings")
+        raise ValueError("success_criteria must be a mapping or list of mappings")
     criteria = []
     for item in raw:
         if not isinstance(item, dict):

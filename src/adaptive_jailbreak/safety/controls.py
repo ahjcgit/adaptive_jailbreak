@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from adaptive_jailbreak.config import load_allowlist
 from adaptive_jailbreak.schemas import FrameworkConfig, TaskRecord
 
 
@@ -10,8 +9,7 @@ class SafetyControls:
     def __init__(self, config: FrameworkConfig, project_root: str | Path | None = None) -> None:
         self.config = config
         self.project_root = Path(project_root or Path.cwd()).resolve()
-        allowlist_path = self._project_path(config.tasks.allowlist_path) if config.tasks.allowlist_path else None
-        self.allowlist = set(config.tasks.allowed_task_ids) | load_allowlist(allowlist_path)
+        self.allowlist = set(config.tasks.allowed_task_ids)
 
     @classmethod
     def from_config(cls, config: FrameworkConfig, project_root: str | Path | None = None) -> "SafetyControls":
@@ -22,14 +20,15 @@ class SafetyControls:
             for name, model in (("attacker", self.config.attacker), ("target", self.config.target)):
                 if model.adapter == "api" or model.provider not in {"dummy", "local"}:
                     raise ValueError(f"local_only blocks {name} provider/adapter: {model.provider}/{model.adapter}")
-            if self.config.evaluator.provider not in {"dummy", "rule", "local"}:
-                raise ValueError(f"local_only blocks evaluator provider: {self.config.evaluator.provider}")
+            evaluator_adapter = self.config.evaluator.adapter
+            if evaluator_adapter == "api" or self.config.evaluator.provider not in {"dummy", "rule", "local"}:
+                raise ValueError(
+                    f"local_only blocks evaluator provider/adapter: "
+                    f"{self.config.evaluator.provider}/{evaluator_adapter}"
+                )
         if self.config.runner.max_iterations <= 0:
             raise ValueError("runner.max_iterations must be positive")
-        if self.config.runner.batch_size <= 0:
-            raise ValueError("runner.batch_size must be positive")
         self._validate_output_path(self.config.experiment.output_dir)
-        self._validate_output_path(self.config.experiment.log_dir)
 
     def _validate_output_path(self, path: str) -> None:
         resolved = self._project_path(path).resolve()

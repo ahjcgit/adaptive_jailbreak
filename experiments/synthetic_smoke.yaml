@@ -1,11 +1,8 @@
 experiment:
   experiment_id: synthetic_smoke
   description: Minimal deterministic smoke test for harness plumbing.
-  random_seed: 123
   output_dir: outputs/synthetic_smoke
-  log_dir: logs
   local_only: true
-  config_version: 1
 
 attacker:
   provider: dummy
@@ -31,7 +28,7 @@ target:
     seed: 123
 
 evaluator:
-  type: hybrid
+  type: rule_based
   provider: dummy
 
 tasks:

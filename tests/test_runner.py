@@ -1,7 +1,6 @@
 from adaptive_jailbreak.config import ConfigLoader
 from adaptive_jailbreak.runner import ExperimentRunner, stopping_criteria_met
 from adaptive_jailbreak.schemas import (
-    AnalysisConfig,
     AuthConfig,
     EvaluatorConfig,
     EvaluatorScores,
@@ -64,7 +63,6 @@ def test_stopping_criteria_does_not_treat_non_refusal_as_success(repo_root):
             stopping=RunnerConfig.from_dict({"stopping": {"stop_on_success": True}}).stopping,
         ),
         storage=StorageConfig(),
-        analysis=AnalysisConfig(),
         auth=AuthConfig(),
         config_hash="sha256:test",
     )

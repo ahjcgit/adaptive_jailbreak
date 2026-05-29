@@ -47,14 +47,21 @@ class EvaluatorConfig:
     type: str
     provider: str = "rule"
     model: str | None = None
-    modes: list[str] = field(default_factory=list)
+    adapter: str | None = None
+    backend: str | None = None
+    revision: str | None = None
+    torch_dtype: str | None = None
+    device_map: str | None = None
+    quantization: dict[str, Any] = field(default_factory=dict)
     generation: GenerationConfig = field(default_factory=GenerationConfig)
+    context: dict[str, Any] = field(default_factory=dict)
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> "EvaluatorConfig":
         payload = dict(data)
         payload["generation"] = GenerationConfig.from_dict(payload.get("generation"))
-        payload.setdefault("modes", [])
+        payload.setdefault("quantization", {})
+        payload.setdefault("context", {})
         return cls(**payload)
 
 
@@ -62,11 +69,8 @@ class EvaluatorConfig:
 class ExperimentConfig:
     experiment_id: str
     description: str = ""
-    random_seed: int = 0
     output_dir: str = "outputs/default"
-    log_dir: str = "logs"
     local_only: bool = False
-    config_version: int = 1
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> "ExperimentConfig":
@@ -75,8 +79,6 @@ class ExperimentConfig:
 
 @dataclass(frozen=True)
 class TasksConfig:
-    task_set_path: str | None = None
-    allowlist_path: str | None = None
     task_ids: list[str] = field(default_factory=list)
     allowed_task_ids: list[str] = field(default_factory=list)
     items: list[TaskRecord] = field(default_factory=list)
@@ -95,59 +97,30 @@ class TasksConfig:
 
 
 @dataclass(frozen=True)
-class RetryConfig:
-    max_attempts: int = 3
-    backoff_seconds: float = 2
-
-
-@dataclass(frozen=True)
 class StoppingConfig:
     stop_on_success: bool = False
     patience: int | None = None
-    min_compliance_score: float = 0.8
-    max_refusal_score: float = 0.2
 
 
 @dataclass(frozen=True)
 class RunnerConfig:
     max_iterations: int = 10
-    batch_size: int = 1
-    retry: RetryConfig = field(default_factory=RetryConfig)
     stopping: StoppingConfig = field(default_factory=StoppingConfig)
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> "RunnerConfig":
         payload = dict(data or {})
-        payload["retry"] = RetryConfig(**payload.get("retry", {}))
         payload["stopping"] = StoppingConfig(**payload.get("stopping", {}))
         return cls(**payload)
 
 
 @dataclass(frozen=True)
 class StorageConfig:
-    format: str = "jsonl"
     flush_each_record: bool = True
-    write_manifest: bool = True
-    redact_fields: list[str] = field(default_factory=list)
 
     @classmethod
     def from_dict(cls, data: dict[str, Any] | None) -> "StorageConfig":
-        payload = dict(data or {})
-        payload.setdefault("redact_fields", [])
-        return cls(**payload)
-
-
-@dataclass(frozen=True)
-class AnalysisConfig:
-    report_formats: list[str] = field(default_factory=lambda: ["markdown"])
-    plots: list[str] = field(default_factory=list)
-
-    @classmethod
-    def from_dict(cls, data: dict[str, Any] | None) -> "AnalysisConfig":
-        payload = dict(data or {})
-        payload.setdefault("report_formats", ["markdown"])
-        payload.setdefault("plots", [])
-        return cls(**payload)
+        return cls(**(data or {}))
 
 
 @dataclass(frozen=True)
@@ -170,7 +143,6 @@ class FrameworkConfig:
     tasks: TasksConfig
     runner: RunnerConfig
     storage: StorageConfig
-    analysis: AnalysisConfig
     auth: AuthConfig
     config_hash: str
     config_path: str | None = None
@@ -185,6 +157,16 @@ class TaskRecord:
     synthetic: bool = True
     target_system_prompt: str | None = None
     metadata: dict[str, Any] = field(default_factory=dict)
+    success_criteria: list[dict[str, Any]] = field(default_factory=list)
+
+    def __post_init__(self) -> None:
+        criteria: Any = self.success_criteria
+        if criteria is None:
+            criteria = []
+        elif isinstance(criteria, dict):
+            criteria = [criteria]
+        if criteria is not self.success_criteria:
+            object.__setattr__(self, "success_criteria", criteria)
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> "TaskRecord":
@@ -193,6 +175,7 @@ class TaskRecord:
             payload["target_system_prompt"] = payload.pop("defender_system_prompt")
         payload.setdefault("metadata", {})
         payload.setdefault("synthetic", True)
+        payload.setdefault("success_criteria", [])
         hidden_flags = payload["metadata"].get("hidden_flags", {})
         if isinstance(payload.get("target_system_prompt"), str) and isinstance(hidden_flags, dict):
             payload["target_system_prompt"] = payload["target_system_prompt"].format_map(_SafeFormatMap(hidden_flags))
@@ -237,6 +220,7 @@ class EvaluatorScores:
     strategy_tags: list[str] = field(default_factory=list)
     failure_mode: str | None = None
     rationale: str = ""
+    feedback: dict[str, Any] = field(default_factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)

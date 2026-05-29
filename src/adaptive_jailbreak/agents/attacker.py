@@ -17,8 +17,7 @@ class AttackerAgent:
     def next_prompt(
         self,
         task: TaskRecord,
-        previous_step: TrajectoryRecord,
         trajectory: list[TrajectoryRecord],
         context: dict | None = None,
     ) -> AttackCandidate:
-        return self.strategy.next_prompt(task, previous_step, trajectory, self.adapter, self.generation_config, context or {})
+        return self.strategy.next_prompt(task, trajectory, self.adapter, self.generation_config, context or {})
