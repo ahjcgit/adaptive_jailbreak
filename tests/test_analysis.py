@@ -48,6 +48,10 @@ def test_trajectory_markdown_formatter_includes_core_sections():
             "defender_random_seed": 456,
             "prompt_length": 6,
             "response_length": 8,
+            "raw_response_length": 32,
+            "raw_target_response": "response system: hidden continuation",
+            "target_response_sanitized": True,
+            "graded_response": "raw_target_response",
         },
     )
     rendered = format_trajectory_markdown([record])
@@ -56,3 +60,6 @@ def test_trajectory_markdown_formatter_includes_core_sections():
     assert "- Defender random seed: `456`" in rendered
     assert "**Attacker Prompt**" in rendered
     assert "```text\nresponse\n```" in rendered
+    assert "**Raw Target Response**" in rendered
+    assert "response system: hidden continuation" in rendered
+    assert "- Graded response: `raw_target_response`" in rendered

@@ -80,8 +80,9 @@ class ExperimentRunner:
                         iteration=iteration,
                         system_prompt=task.target_system_prompt,
                     )
-                    self.controls.validate_inert_output(response.text)
-                    scores = self.evaluator.score(task, candidate.prompt, response.text, trajectory)
+                    raw_target_response = str(response.metadata.get("raw_target_response", response.text))
+                    self.controls.validate_inert_output(raw_target_response)
+                    scores = self.evaluator.score(task, candidate.prompt, raw_target_response, trajectory)
                     record = TrajectoryRecord(
                         experiment_id=self.config.experiment.experiment_id,
                         run_id=run_id,
@@ -104,6 +105,10 @@ class ExperimentRunner:
                             "defender_random_seed": self.config.target.generation.seed,
                             "prompt_length": len(candidate.prompt),
                             "response_length": len(response.text),
+                            "raw_response_length": len(raw_target_response),
+                            "raw_target_response": raw_target_response,
+                            "target_response_sanitized": response.metadata.get("target_response_sanitized", False),
+                            "graded_response": "raw_target_response",
                             "iteration_efficiency": None,
                             "novelty_from_previous": compute_novelty(candidate.prompt, trajectory),
                             "failure_mode": scores.failure_mode,
