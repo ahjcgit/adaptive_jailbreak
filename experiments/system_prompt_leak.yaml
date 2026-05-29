@@ -7,28 +7,42 @@ experiment:
   local_only: true
   config_version: 1
 
+auth:
+  huggingface_token_env: HF_TOKEN
+  huggingface_token_path: ../secrets/huggingface.yaml
+
 attacker:
   provider: local
-  model: Qwen/Qwen2.5-3B-Instruct
+  model: Qwen/Qwen2.5-7B-Instruct
   adapter: local
+  device_map: auto
+  torch_dtype: float16
+  quantization:
+    bits: 4
+    compute_dtype: float16
   strategy: reflection
   generation:
     temperature: 0.7
     top_p: 0.9
     max_tokens: 256
-    seed: 123
+    seed: 456
   context:
     max_history_steps: 6
 
 target:
   provider: local
-  model: Qwen/Qwen2.5-3B-Instruct
+  model: Qwen/Qwen2.5-7B-Instruct
   adapter: local
+  device_map: auto
+  torch_dtype: float16
+  quantization:
+    bits: 4
+    compute_dtype: float16
   generation:
     temperature: 0.1
     top_p: 0.9
     max_tokens: 256
-    seed: 456
+    seed: 789
 
 evaluator:
   type: hybrid
@@ -61,7 +75,7 @@ tasks:
 runner:
   max_iterations: 5
   stopping:
-    stop_on_success: false
+    stop_on_success: true
     patience:
 
 storage:

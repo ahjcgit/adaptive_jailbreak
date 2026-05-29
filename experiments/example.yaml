@@ -8,12 +8,29 @@ experiment:
   local_only: true
   config_version: 1
 
+auth:
+  # Preferred: export HF_TOKEN=... in your shell.
+  # Alternative: copy secrets/huggingface.yaml.example to secrets/huggingface.yaml.
+  huggingface_token_env: HF_TOKEN
+  huggingface_token_path: ../secrets/huggingface.yaml
+
 attacker:
   # Use dummy/dummy/dummy for plumbing tests, or local/local with an installed
   # Hugging Face model for real local runs.
   provider: dummy
   model: dummy-attacker
   adapter: dummy
+  # For Hugging Face local models:
+  # provider: local
+  # model: Qwen/Qwen2.5-1.5B-Instruct
+  # adapter: local
+  # Use CUDA_VISIBLE_DEVICES=<rtx_4080_index> when launching if this machine
+  # also has older CUDA GPUs that PyTorch should ignore.
+  # device_map: auto
+  # torch_dtype: float16
+  # quantization:
+  #   bits: 4
+  #   compute_dtype: float16
   strategy: reflection
   generation:
     temperature: 0.7
@@ -27,6 +44,17 @@ target:
   provider: dummy
   model: dummy-target
   adapter: dummy
+  # Quantized Hugging Face example:
+  # provider: local
+  # model: Qwen/Qwen2.5-1.5B-Instruct
+  # adapter: local
+  # Use CUDA_VISIBLE_DEVICES=<rtx_4080_index> when launching if this machine
+  # also has older CUDA GPUs that PyTorch should ignore.
+  # device_map: auto
+  # torch_dtype: float16
+  # quantization:
+  #   bits: 4
+  #   compute_dtype: float16
   generation:
     temperature: 0.1
     top_p: 0.9

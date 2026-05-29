@@ -43,9 +43,16 @@ def test_trajectory_markdown_formatter_includes_core_sections():
         strategy_tags=["reflection"],
         timestamp="now",
         config_hash="sha256:x",
-        metadata={"prompt_length": 6, "response_length": 8},
+        metadata={
+            "attacker_random_seed": 123,
+            "defender_random_seed": 456,
+            "prompt_length": 6,
+            "response_length": 8,
+        },
     )
     rendered = format_trajectory_markdown([record])
     assert "## Run `run`" in rendered
+    assert "- Attacker random seed: `123`" in rendered
+    assert "- Defender random seed: `456`" in rendered
     assert "**Attacker Prompt**" in rendered
     assert "```text\nresponse\n```" in rendered

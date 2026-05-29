@@ -1,3 +1,20 @@
+Metadata-Version: 2.4
+Name: adaptive-jailbreak
+Version: 0.1.0
+Summary: Research framework for controlled iterative adversarial prompting experiments.
+Requires-Python: >=3.10
+Description-Content-Type: text/markdown
+Requires-Dist: PyYAML>=6.0
+Provides-Extra: dev
+Requires-Dist: pytest>=8.0; extra == "dev"
+Provides-Extra: analysis
+Requires-Dist: matplotlib>=3.8; extra == "analysis"
+Provides-Extra: local
+Requires-Dist: torch; extra == "local"
+Requires-Dist: transformers; extra == "local"
+Requires-Dist: accelerate; extra == "local"
+Requires-Dist: bitsandbytes; extra == "local"
+
 # Adaptive Jailbreak Experiment Harness
 
 This repository contains a small experiment harness for controlled iterative prompting experiments. Model text is treated as inert data: the harness sends configured prompts to configured adapters, scores the text response, and writes local output. It never executes generated text or delegates it to tools.
@@ -30,10 +47,8 @@ Install optional local-model dependencies before using `adapter: local`:
 
 ```bash
 pip install -e .[local]
-CUDA_VISIBLE_DEVICES=0 python -m adaptive_jailbreak.cli run --config experiments/system_prompt_leak.yaml
+python -m adaptive_jailbreak.cli run --config experiments/system_prompt_leak.yaml
 ```
-
-Use `nvidia-smi` to confirm the RTX 4080 index first. In your current setup the traceback shows the GTX 1070 Ti as `GPU1`, so `CUDA_VISIBLE_DEVICES=0` should expose only the RTX 4080 to PyTorch and prevent Accelerate from placing any model layers on the unsupported GTX 1070 Ti.
 
 For gated Hugging Face models, either export `HF_TOKEN` or copy
 `secrets/huggingface.yaml.example` to `secrets/huggingface.yaml` and paste

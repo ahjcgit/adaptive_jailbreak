@@ -2,6 +2,7 @@ from adaptive_jailbreak.config import ConfigLoader
 from adaptive_jailbreak.runner import ExperimentRunner, stopping_criteria_met
 from adaptive_jailbreak.schemas import (
     AnalysisConfig,
+    AuthConfig,
     EvaluatorConfig,
     EvaluatorScores,
     ExperimentConfig,
@@ -24,6 +25,8 @@ def test_runner_end_to_end(repo_root, tmp_path):
     runner = ExperimentRunner(config, project_root=tmp_path)
     records = runner.run()
     assert records
+    assert records[0].metadata["attacker_random_seed"] == config.attacker.generation.seed
+    assert records[0].metadata["defender_random_seed"] == config.target.generation.seed
     assert runner.store.trajectory_path.exists()
 
 
@@ -62,6 +65,7 @@ def test_stopping_criteria_does_not_treat_non_refusal_as_success(repo_root):
         ),
         storage=StorageConfig(),
         analysis=AnalysisConfig(),
+        auth=AuthConfig(),
         config_hash="sha256:test",
     )
     scores = EvaluatorScores(

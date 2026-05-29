@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from pathlib import Path
 from typing import Any
 
@@ -7,6 +8,7 @@ import yaml
 
 from adaptive_jailbreak.schemas import (
     AnalysisConfig,
+    AuthConfig,
     EvaluatorConfig,
     ExperimentConfig,
     FrameworkConfig,
@@ -49,6 +51,7 @@ class ConfigLoader:
         missing = [key for key in required if key not in raw]
         if missing:
             raise ValueError(f"Missing required config sections: {', '.join(missing)}")
+        auth = AuthConfig.from_dict(raw.get("auth"))
         return FrameworkConfig(
             experiment=ExperimentConfig.from_dict(raw["experiment"]),
             attacker=ModelConfig.from_dict(raw["attacker"]),
@@ -58,6 +61,12 @@ class ConfigLoader:
             runner=RunnerConfig.from_dict(raw.get("runner", {})),
             storage=StorageConfig.from_dict(raw.get("storage")),
             analysis=AnalysisConfig.from_dict(raw.get("analysis")),
+            auth=auth.__class__(
+                **{
+                    **auth.__dict__,
+                    "huggingface_token": _load_huggingface_token(auth, path.parent),
+                }
+            ),
             config_hash=config_hash,
             config_path=str(path),
         )
@@ -87,3 +96,21 @@ def load_allowlist(path: str | Path | None) -> set[str]:
         return set()
     raw = read_yaml(path)
     return set(raw.get("allowed_task_ids", []))
+
+
+def _load_huggingface_token(auth: AuthConfig, config_dir: Path) -> str | None:
+    token = os.getenv(auth.huggingface_token_env)
+    if token:
+        return token
+    if not auth.huggingface_token_path:
+        return None
+    token_path = Path(auth.huggingface_token_path)
+    if not token_path.is_absolute():
+        token_path = config_dir / token_path
+    if not token_path.exists():
+        return None
+    raw = read_yaml(token_path)
+    token_value = raw.get("token") or raw.get("huggingface_token")
+    if token_value is None:
+        return None
+    return str(token_value)

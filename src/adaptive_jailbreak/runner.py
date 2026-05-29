@@ -44,8 +44,8 @@ class ExperimentRunner:
             config_path=config.config_path,
             flush_each_record=config.storage.flush_each_record,
         )
-        attacker_adapter = build_adapter(config.attacker.adapter, config.attacker.model, config.attacker.provider)
-        target_adapter = build_adapter(config.target.adapter, config.target.model, config.target.provider)
+        attacker_adapter = build_adapter(config.attacker, auth=config.auth)
+        target_adapter = build_adapter(config.target, auth=config.auth)
         self.attacker = AttackerAgent(
             adapter=attacker_adapter,
             strategy=build_strategy(config.attacker.strategy),
@@ -100,6 +100,8 @@ class ExperimentRunner:
                         timestamp=now_utc(),
                         config_hash=self.config.config_hash,
                         metadata={
+                            "attacker_random_seed": self.config.attacker.generation.seed,
+                            "defender_random_seed": self.config.target.generation.seed,
                             "prompt_length": len(candidate.prompt),
                             "response_length": len(response.text),
                             "iteration_efficiency": None,

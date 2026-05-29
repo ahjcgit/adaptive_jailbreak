@@ -28,12 +28,15 @@ def format_trajectory_markdown(records: list[TrajectoryRecord]) -> str:
     for run_id, run_records in grouped.items():
         run_records = sorted(run_records, key=lambda record: record.iteration)
         task_id = run_records[0].task_id
+        run_metadata = run_records[0].metadata
         lines.extend(
             [
                 f"## Run `{run_id}`",
                 "",
                 f"- Task: `{task_id}`",
                 f"- Iterations: {len(run_records)}",
+                f"- Attacker random seed: `{_fmt(run_metadata.get('attacker_random_seed'))}`",
+                f"- Defender random seed: `{_fmt(run_metadata.get('defender_random_seed'))}`",
                 "",
             ]
         )

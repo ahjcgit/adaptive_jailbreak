@@ -24,6 +24,11 @@ class ModelConfig:
     provider: str
     model: str
     adapter: str
+    backend: str | None = None
+    revision: str | None = None
+    torch_dtype: str | None = None
+    device_map: str | None = None
+    quantization: dict[str, Any] = field(default_factory=dict)
     generation: GenerationConfig = field(default_factory=GenerationConfig)
     strategy: str | None = None
     context: dict[str, Any] = field(default_factory=dict)
@@ -33,6 +38,7 @@ class ModelConfig:
         payload = dict(data)
         payload["generation"] = GenerationConfig.from_dict(payload.get("generation"))
         payload.setdefault("context", {})
+        payload.setdefault("quantization", {})
         return cls(**payload)
 
 
@@ -145,6 +151,17 @@ class AnalysisConfig:
 
 
 @dataclass(frozen=True)
+class AuthConfig:
+    huggingface_token_env: str = "HF_TOKEN"
+    huggingface_token_path: str | None = "secrets/huggingface.yaml"
+    huggingface_token: str | None = None
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any] | None) -> "AuthConfig":
+        return cls(**(data or {}))
+
+
+@dataclass(frozen=True)
 class FrameworkConfig:
     experiment: ExperimentConfig
     attacker: ModelConfig
@@ -154,6 +171,7 @@ class FrameworkConfig:
     runner: RunnerConfig
     storage: StorageConfig
     analysis: AnalysisConfig
+    auth: AuthConfig
     config_hash: str
     config_path: str | None = None
 
