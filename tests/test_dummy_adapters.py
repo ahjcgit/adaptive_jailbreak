@@ -70,3 +70,15 @@ def test_local_adapter_uses_embedding_device_when_device_map_is_empty():
 
     adapter = LocalModelAdapter("org/model", device_map="auto")
     assert adapter._input_device(None, FakeModel()) == "cuda:0"
+
+
+def test_local_adapter_prefers_tokenizer_chat_template():
+    class FakeTokenizer:
+        def apply_chat_template(self, messages, tokenize=False, add_generation_prompt=True):
+            assert tokenize is False
+            assert add_generation_prompt is True
+            assert messages == [{"role": "user", "content": "hello"}]
+            return "templated"
+
+    messages = [ModelMessage(role="user", content="hello")]
+    assert LocalModelAdapter._format_messages(messages, FakeTokenizer()) == "templated"

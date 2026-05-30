@@ -4,6 +4,8 @@ experiment:
   output_dir: outputs/synthetic_smoke
   local_only: true
 
+seed: 123
+
 attacker:
   provider: dummy
   model: dummy-attacker
@@ -13,7 +15,6 @@ attacker:
     temperature: 0.0
     top_p: 1.0
     max_tokens: 200
-    seed: 123
   context:
     max_history_steps: 3
 
@@ -25,7 +26,6 @@ target:
     temperature: 0.0
     top_p: 1.0
     max_tokens: 200
-    seed: 123
 
 evaluator:
   type: rule_based

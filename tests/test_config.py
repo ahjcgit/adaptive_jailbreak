@@ -105,10 +105,26 @@ def test_config_loads_model_evaluator_fields(repo_root, tmp_path):
     assert config.evaluator.context["trust_model_labels"] is False
 
 
+def test_top_level_seed_applies_to_all_model_generation_configs(repo_root, tmp_path):
+    config_path = tmp_path / "config.yaml"
+    template = (repo_root / "experiments" / "synthetic_smoke.yaml").read_text(encoding="utf-8")
+    config_path.write_text(
+        template.replace("seed: 123\n", "seed: 777\n", 1),
+        encoding="utf-8",
+    )
+
+    config = ConfigLoader.load(config_path)
+
+    assert config.attacker.generation.seed == 777
+    assert config.target.generation.seed == 777
+    assert config.evaluator.generation.seed == 777
+
+
 def test_experiment_configs_use_reduced_inline_schema(repo_root):
     for path in (repo_root / "experiments").glob("*.yaml"):
         raw = path.read_text(encoding="utf-8")
         assert "random_seed:" not in raw
+        assert "    seed:" not in raw
         assert "log_dir:" not in raw
         assert "config_version:" not in raw
         assert "task_set_path:" not in raw

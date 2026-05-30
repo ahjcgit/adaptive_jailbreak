@@ -4,6 +4,8 @@ experiment:
   output_dir: outputs/system_prompt_leak_2
   local_only: true
 
+seed: 456
+
 auth:
   huggingface_token_env: HF_TOKEN
   huggingface_token_path: ../secrets/huggingface.yaml
@@ -22,7 +24,6 @@ attacker:
     temperature: 0.7
     top_p: 0.9
     max_tokens: 256
-    seed: 456
   context:
     max_history_steps: 6
 
@@ -39,7 +40,6 @@ target:
     temperature: 0.1
     top_p: 0.9
     max_tokens: 256
-    seed: 789
 
 evaluator:
   type: rule_based

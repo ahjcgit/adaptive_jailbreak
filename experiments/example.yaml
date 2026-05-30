@@ -5,6 +5,8 @@ experiment:
   output_dir: outputs/my_experiment
   local_only: true
 
+seed: 123
+
 auth:
   # Preferred: export HF_TOKEN=... in your shell.
   # Alternative: copy secrets/huggingface.yaml.example to secrets/huggingface.yaml.
@@ -33,7 +35,6 @@ attacker:
     temperature: 0.7
     top_p: 0.9
     max_tokens: 256
-    seed: 123
   context:
     max_history_steps: 6
 
@@ -56,7 +57,6 @@ target:
     temperature: 0.1
     top_p: 0.9
     max_tokens: 256
-    seed: 456
 
 evaluator:
   type: rule_based

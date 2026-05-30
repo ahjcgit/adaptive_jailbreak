@@ -66,7 +66,7 @@ class LocalModelAdapter(ModelAdapter):
 
         start = perf_counter()
         tokenizer, model, device = self._load_transformers_model()
-        prompt = self._format_messages(messages)
+        prompt = self._format_messages(messages, tokenizer)
         inputs = tokenizer(prompt, return_tensors="pt", truncation=True, max_length=1024)
         inputs = {key: value.to(device) for key, value in inputs.items()}
 
@@ -154,7 +154,7 @@ class LocalModelAdapter(ModelAdapter):
     def _model_kwargs(self, torch: Any, bits_and_bytes_config: Any, common_kwargs: dict[str, Any]) -> dict[str, Any]:
         kwargs = dict(common_kwargs)
         if self.torch_dtype:
-            kwargs["dtype"] = self._torch_dtype(torch, self.torch_dtype)
+            kwargs["torch_dtype"] = self._torch_dtype(torch, self.torch_dtype)
         if self.device_map:
             kwargs["device_map"] = self.device_map
         quantization = dict(self.quantization)
@@ -248,7 +248,13 @@ class LocalModelAdapter(ModelAdapter):
         return repr((self.model_id, self.revision, self.torch_dtype, self.device_map, sorted(self.quantization.items())))
 
     @staticmethod
-    def _format_messages(messages: list[ModelMessage]) -> str:
+    def _format_messages(messages: list[ModelMessage], tokenizer: Any | None = None) -> str:
+        if tokenizer is not None and hasattr(tokenizer, "apply_chat_template"):
+            chat_messages = [{"role": message.role, "content": message.content} for message in messages]
+            try:
+                return tokenizer.apply_chat_template(chat_messages, tokenize=False, add_generation_prompt=True)
+            except Exception:
+                pass
         return "\n".join(f"{message.role}: {message.content}" for message in messages) + "\nassistant:"
 
     @staticmethod

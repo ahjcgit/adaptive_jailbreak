@@ -39,11 +39,15 @@ class ConfigLoader:
         if missing:
             raise ValueError(f"Missing required config sections: {', '.join(missing)}")
         auth = AuthConfig.from_dict(raw.get("auth"))
+        shared_seed = raw.get("seed")
+        attacker = ModelConfig.from_dict(_with_shared_seed(raw["attacker"], shared_seed))
+        target = ModelConfig.from_dict(_with_shared_seed(raw["target"], shared_seed))
+        evaluator = EvaluatorConfig.from_dict(_with_shared_seed(raw["evaluator"], shared_seed))
         return FrameworkConfig(
             experiment=ExperimentConfig.from_dict(raw["experiment"]),
-            attacker=ModelConfig.from_dict(raw["attacker"]),
-            target=ModelConfig.from_dict(raw["target"]),
-            evaluator=EvaluatorConfig.from_dict(raw["evaluator"]),
+            attacker=attacker,
+            target=target,
+            evaluator=evaluator,
             tasks=TasksConfig.from_dict(raw["tasks"]),
             runner=RunnerConfig.from_dict(raw.get("runner", {})),
             storage=StorageConfig.from_dict(raw.get("storage")),
@@ -63,6 +67,16 @@ def select_tasks(tasks: list[TaskRecord], task_ids: list[str] | None = None) -> 
     if not selected:
         return list(tasks)
     return [task for task in tasks if task.task_id in selected]
+
+
+def _with_shared_seed(raw_model: dict[str, Any], shared_seed: Any) -> dict[str, Any]:
+    payload = dict(raw_model)
+    if shared_seed is None:
+        return payload
+    generation = dict(payload.get("generation") or {})
+    generation.setdefault("seed", int(shared_seed))
+    payload["generation"] = generation
+    return payload
 
 
 def _load_huggingface_token(auth: AuthConfig, config_dir: Path) -> str | None:

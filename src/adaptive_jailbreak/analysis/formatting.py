@@ -43,15 +43,25 @@ def format_trajectory_markdown(records: list[TrajectoryRecord]) -> str:
         for record in run_records:
             scores = record.evaluator_scores
             metadata = record.metadata
-            raw_target_response = metadata.get("raw_target_response")
-            raw_response_lines = []
-            if raw_target_response is not None:
-                raw_response_lines = [
-                    "**Raw Target Response**",
+            validation_lines = []
+            if metadata.get("raw_evaluator_feedback") or metadata.get("validated_evaluator_feedback"):
+                validated_feedback = metadata.get("validated_evaluator_feedback", {})
+                if isinstance(validated_feedback, dict):
+                    validated_text = str(validated_feedback.get("feedback_text") or validated_feedback)
+                else:
+                    validated_text = str(validated_feedback)
+                validation_lines = [
+                    "**Evaluator Feedback**",
                     "",
-                    "_Used for grading; not included in attacker trajectory history._",
+                    "Raw evaluator feedback:",
                     "",
-                    _fenced(str(raw_target_response)),
+                    _fenced(str(metadata.get("raw_evaluator_feedback", ""))),
+                    "",
+                    "Validated evaluator feedback:",
+                    "",
+                    _fenced(validated_text),
+                    "",
+                    f"Validator warnings: `{metadata.get('validator_warnings', [])}`",
                     "",
                 ]
             lines.extend(
@@ -73,9 +83,10 @@ def format_trajectory_markdown(records: list[TrajectoryRecord]) -> str:
                     f"  - Attack family: `{metadata.get('attack_family')}`",
                     f"  - Prompt length: `{metadata.get('prompt_length')}`",
                     f"  - Response length: `{metadata.get('response_length')}`",
-                    f"  - Raw response length: `{metadata.get('raw_response_length')}`",
                     f"  - Target response sanitized: `{metadata.get('target_response_sanitized')}`",
                     f"  - Graded response: `{metadata.get('graded_response', 'target_response')}`",
+                    f"  - Novelty guard passed: `{metadata.get('novelty_passed')}`",
+                    f"  - Regeneration count: `{metadata.get('regeneration_count')}`",
                     f"  - Novelty from previous: `{_fmt(metadata.get('novelty_from_previous'))}`",
                     f"  - Target latency ms: `{metadata.get('adapter_latency_ms')}`",
                     "",
@@ -89,11 +100,9 @@ def format_trajectory_markdown(records: list[TrajectoryRecord]) -> str:
                     "",
                     "**Target Response**",
                     "",
-                    "_Sanitized response shown to the attacker on subsequent iterations._",
-                    "",
                     _fenced(record.target_response),
                     "",
-                    *raw_response_lines,
+                    *validation_lines,
                     "**Evaluator Rationale**",
                     "",
                     _fenced(str(scores.get("rationale", ""))),

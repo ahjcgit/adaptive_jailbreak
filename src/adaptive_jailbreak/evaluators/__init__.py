@@ -1,4 +1,5 @@
 from adaptive_jailbreak.evaluators.base import Evaluator
+from adaptive_jailbreak.evaluators.feedback import EvaluatorFeedback
 from adaptive_jailbreak.evaluators.model import ModelEvaluator
 from adaptive_jailbreak.evaluators.rule_based import RuleBasedEvaluator
 from adaptive_jailbreak.evaluators.success_criteria import SuccessCriteriaRegistry
@@ -42,6 +43,7 @@ def _model_config_from_evaluator(config: EvaluatorConfig) -> ModelConfig:
 
 __all__ = [
     "Evaluator",
+    "EvaluatorFeedback",
     "ModelEvaluator",
     "RuleBasedEvaluator",
     "SuccessCriteriaRegistry",

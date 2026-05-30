@@ -221,6 +221,9 @@ class EvaluatorScores:
     failure_mode: str | None = None
     rationale: str = ""
     feedback: dict[str, Any] = field(default_factory=dict)
+    raw_evaluator_feedback: str = ""
+    validated_evaluator_feedback: dict[str, Any] = field(default_factory=dict)
+    validator_warnings: list[str] = field(default_factory=list)
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
