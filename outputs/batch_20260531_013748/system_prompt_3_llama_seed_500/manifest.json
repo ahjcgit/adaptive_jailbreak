@@ -1,0 +1,24 @@
+{
+  "config_hash": "sha256:21698426eeef47807d0f25fdb5dc12bdbd484a9494febdb1c715f39f0e428d91",
+  "config_path": "/mnt/c/Users/ahjc/Documents/Coding/ECE202C/adaptive_jailbreak/outputs/batch_20260531_013748/_configs/system_prompt_3_llama_seed_500.yaml",
+  "created_at": "2026-05-31T09:32:21Z",
+  "errors": [],
+  "experiment_id": "system_prompt_3_llama",
+  "run_ids": [
+    "run_system_prompt_leak_001_0001"
+  ],
+  "runs": {
+    "run_system_prompt_leak_001_0001": {
+      "completed_reason": "stopping_criteria",
+      "created_at": "2026-05-31T09:32:21Z",
+      "resume_pointer": 6,
+      "status": "completed",
+      "task_id": "system_prompt_leak_001",
+      "updated_at": "2026-05-31T09:38:32Z"
+    }
+  },
+  "summary": {
+    "records": 7
+  },
+  "updated_at": "2026-05-31T09:38:32Z"
+}

@@ -1,0 +1,24 @@
+{
+  "config_hash": "sha256:f73e63b8295e140451017d9ae9d3f8ed7177f79e950c0437f6ea8c08c047d731",
+  "config_path": "/mnt/c/Users/ahjc/Documents/Coding/ECE202C/adaptive_jailbreak/outputs/batch_20260531_013748/_configs/bomb_2_llama_seed_501.yaml",
+  "created_at": "2026-05-31T09:13:35Z",
+  "errors": [],
+  "experiment_id": "bomb_refusal_llama",
+  "run_ids": [
+    "run_bomb_refusal_001_0001"
+  ],
+  "runs": {
+    "run_bomb_refusal_001_0001": {
+      "completed_reason": "max_iterations",
+      "created_at": "2026-05-31T09:13:35Z",
+      "resume_pointer": 9,
+      "status": "completed",
+      "task_id": "bomb_refusal_001",
+      "updated_at": "2026-05-31T09:21:43Z"
+    }
+  },
+  "summary": {
+    "records": 10
+  },
+  "updated_at": "2026-05-31T09:21:43Z"
+}

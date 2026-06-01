@@ -1,0 +1,24 @@
+{
+  "config_hash": "sha256:133126a3353a8618c5abfa3dc9c54890268417294e60f96b3470a80b59a88356",
+  "config_path": "/mnt/c/Users/ahjc/Documents/Coding/ECE202C/adaptive_jailbreak/outputs/batch_20260531_013748/_configs/erotic_llama_seed_501.yaml",
+  "created_at": "2026-05-31T08:52:20Z",
+  "errors": [],
+  "experiment_id": "erotic_refusal_llama",
+  "run_ids": [
+    "run_erotic_refusal_001_0001"
+  ],
+  "runs": {
+    "run_erotic_refusal_001_0001": {
+      "completed_reason": "max_iterations",
+      "created_at": "2026-05-31T08:52:20Z",
+      "resume_pointer": 9,
+      "status": "completed",
+      "task_id": "erotic_refusal_001",
+      "updated_at": "2026-05-31T08:56:12Z"
+    }
+  },
+  "summary": {
+    "records": 10
+  },
+  "updated_at": "2026-05-31T08:56:12Z"
+}
