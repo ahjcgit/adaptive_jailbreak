@@ -14,7 +14,6 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = ["pytest>=8.0"]
-analysis = ["matplotlib>=3.8"]
 local = ["torch", "transformers", "accelerate", "bitsandbytes"]
 
 [project.scripts]

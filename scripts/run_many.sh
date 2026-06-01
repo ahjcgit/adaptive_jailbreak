@@ -1,25 +1,19 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Edit these two lists before leaving.
-CONFIGS=(
-  "experiments/erotic_llama.yaml"
-  "experiments/bomb_2_llama.yaml"
-  "experiments/system_prompt_3_llama.yaml"
-)
-
-SEEDS=(
-  500
-  501
-  502
-)
-
 # Optional:
 #   DRY_RUN=1 bash scripts/run_many.sh
 #   BATCH_NAME=my_batch bash scripts/run_many.sh
+#   CONFIG_LIST="experiments/bomb_2.yaml experiments/system_prompt_3.yaml" bash scripts/run_many.sh
+#   SEED_LIST="500 501 502" bash scripts/run_many.sh
 DRY_RUN="${DRY_RUN:-0}"
 BATCH_NAME="${BATCH_NAME:-batch_$(date +%Y%m%d_%H%M%S)}"
 PYTHON_BIN="${PYTHON_BIN:-python}"
+CONFIG_LIST="${CONFIG_LIST:-experiments/erotic_llama.yaml experiments/bomb_2_llama.yaml experiments/system_prompt_3_llama.yaml}"
+SEED_LIST="${SEED_LIST:-500 501 502}"
+
+read -r -a CONFIGS <<< "$CONFIG_LIST"
+read -r -a SEEDS <<< "$SEED_LIST"
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 OUT_ROOT="$ROOT/outputs/$BATCH_NAME"

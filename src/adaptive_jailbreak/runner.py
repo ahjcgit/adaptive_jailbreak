@@ -5,7 +5,7 @@ from pathlib import Path
 
 from adaptive_jailbreak.adapters import build_adapter
 from adaptive_jailbreak.agents import AttackerAgent, TargetAgent
-from adaptive_jailbreak.config import ConfigLoader, select_tasks
+from adaptive_jailbreak.config import select_tasks
 from adaptive_jailbreak.evaluators import build_evaluator
 from adaptive_jailbreak.safety import SafetyControls
 from adaptive_jailbreak.schemas import FrameworkConfig, TaskRecord, TrajectoryRecord
@@ -53,10 +53,6 @@ class ExperimentRunner:
         )
         self.target = TargetAgent(adapter=target_adapter, generation_config=config.target.generation)
         self.evaluator = build_evaluator(config.evaluator, auth=config.auth)
-
-    @classmethod
-    def from_config_path(cls, path: str | Path, project_root: str | Path | None = None) -> "ExperimentRunner":
-        return cls(ConfigLoader.load(path), project_root=project_root)
 
     def run(self, resume_run_id: str | None = None, force_config: bool = False) -> list[TrajectoryRecord]:
         tasks = self._load_configured_tasks()
@@ -137,9 +133,6 @@ class ExperimentRunner:
             if resume_run_id:
                 break
         return all_records
-
-    def replay(self, run_id: str | None = None) -> list[TrajectoryRecord]:
-        return self.store.load_trajectory(run_id)
 
     def _load_configured_tasks(self) -> list[TaskRecord]:
         if self.config.tasks.items:

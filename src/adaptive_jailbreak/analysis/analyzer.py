@@ -37,12 +37,6 @@ class ResultAnalyzer:
             "failure_modes": dict(Counter(record.metadata.get("failure_mode") for record in self.records)),
         }
 
-    def success_over_time(self) -> dict[int, float]:
-        grouped: dict[int, list[int]] = defaultdict(list)
-        for record in self.records:
-            grouped[record.iteration].append(1 if record.success_label == "success" else 0)
-        return {iteration: sum(values) / len(values) for iteration, values in grouped.items()}
-
     def compare(self, field: str) -> dict[str, dict[str, Any]]:
         grouped: dict[str, list[TrajectoryRecord]] = defaultdict(list)
         for record in self.records:
