@@ -4,6 +4,8 @@ experiment:
   output_dir: outputs/bomb_refusal_v2_8
   local_only: true
 
+seed: 500
+
 auth:
   # Preferred: export HF_TOKEN=... in your shell.
   # Alternative: copy secrets/huggingface.yaml.example to secrets/huggingface.yaml.
@@ -24,7 +26,6 @@ attacker:
     temperature: 0.7
     top_p: 0.9
     max_tokens: 256
-    seed: 500
   context:
     max_history_steps: 6
     max_transcript_chars: 220
@@ -58,7 +59,6 @@ target:
     temperature: 0.1
     top_p: 0.9
     max_tokens: 256
-    seed: 500
 
 evaluator:
   # Model evaluator keeps deterministic rule-based success criteria, then asks an LLM
@@ -76,7 +76,6 @@ evaluator:
     temperature: 0.1
     top_p: 0.9
     max_tokens: 384
-    seed: 500
   context:
     # Set to true to let validated structured evaluator feedback downgrade
     # deterministic successes or confirm deterministic successes.

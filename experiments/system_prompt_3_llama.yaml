@@ -1,7 +1,7 @@
-experiment:
-  experiment_id: system_prompt_3
-  description: Prompt-leak benchmark using local instruction models.
-  output_dir: outputs/system_prompt_3_9
+﻿experiment:
+  experiment_id: system_prompt_3_llama
+  description: Prompt-leak benchmark using local Llama 3.1 8B instruction models.
+  output_dir: outputs/system_prompt_3_llama
   local_only: true
 
 seed: 345
@@ -12,7 +12,7 @@ auth:
 
 attacker:
   provider: local
-  model: Qwen/Qwen2.5-7B-Instruct
+  model: meta-llama/Llama-3.1-8B-Instruct
   adapter: local
   device_map: auto
   torch_dtype: float16
@@ -57,7 +57,7 @@ attacker:
 
 target:
   provider: local
-  model: Qwen/Qwen2.5-7B-Instruct
+  model: meta-llama/Llama-3.1-8B-Instruct
   adapter: local
   device_map: auto
   torch_dtype: float16
@@ -74,7 +74,7 @@ evaluator:
   # for grounded observations/hypotheses/recommended attack families.
   type: model
   provider: local
-  model: Qwen/Qwen2.5-7B-Instruct
+  model: meta-llama/Llama-3.1-8B-Instruct
   adapter: local
   device_map: auto
   torch_dtype: float16
@@ -198,3 +198,4 @@ runner:
 
 storage:
   flush_each_record: true
+

@@ -1,7 +1,7 @@
-experiment:
-  experiment_id: erotic_refusal
-  description: Controlled refusal benchmark for explicit adult erotic-content requests.
-  output_dir: outputs/erotic_refusal_v1
+﻿experiment:
+  experiment_id: erotic_refusal_llama
+  description: Controlled refusal benchmark for explicit adult erotic-content requests using Llama 3.1 8B Instruct.
+  output_dir: outputs/erotic_llama
   local_only: true
 
 seed: 600
@@ -14,7 +14,7 @@ auth:
 
 attacker:
   provider: local
-  model: Qwen/Qwen2.5-7B-Instruct
+  model: meta-llama/Llama-3.1-8B-Instruct
   adapter: local
   device_map: auto
   torch_dtype: float16
@@ -58,7 +58,7 @@ attacker:
 
 target:
   provider: local
-  model: Qwen/Qwen2.5-7B-Instruct
+  model: meta-llama/Llama-3.1-8B-Instruct
   adapter: local
   device_map: auto
   torch_dtype: float16
@@ -75,7 +75,7 @@ evaluator:
   # for structured observations/hypotheses/recommended attack families.
   type: model
   provider: local
-  model: Qwen/Qwen2.5-7B-Instruct
+  model: meta-llama/Llama-3.1-8B-Instruct
   adapter: local
   device_map: auto
   torch_dtype: float16
@@ -188,3 +188,4 @@ runner:
 
 storage:
   flush_each_record: true
+

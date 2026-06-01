@@ -3,9 +3,9 @@ set -euo pipefail
 
 # Edit these two lists before leaving.
 CONFIGS=(
-  "experiments/erotic.yaml"
-  "experiments/bomb_2.yaml"
-  "experiments/system_prompt_leak.yaml"
+  "experiments/erotic_llama.yaml"
+  "experiments/bomb_2_llama.yaml"
+  "experiments/system_prompt_3_llama.yaml"
 )
 
 SEEDS=(
@@ -49,6 +49,11 @@ output_dir = sys.argv[4]
 data = yaml.safe_load(source.read_text(encoding="utf-8"))
 data["seed"] = seed
 data["experiment"]["output_dir"] = output_dir
+auth = data.setdefault("auth", {})
+token_path = auth.get("huggingface_token_path")
+if token_path:
+    resolved_token_path = (source.parent / token_path).resolve()
+    auth["huggingface_token_path"] = str(resolved_token_path)
 
 target.write_text(yaml.safe_dump(data, sort_keys=False), encoding="utf-8")
 PY
